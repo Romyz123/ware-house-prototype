@@ -1,281 +1,250 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Package, LayoutDashboard, Truck, MapPin, 
-  ArrowRightLeft, ClipboardCheck, BarChart3, 
-  LogOut, Sun, Moon, Search, Plus, Printer, 
-  CheckCircle, ChevronRight, X, Scan
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core-WMS | Professional Warehouse Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s ease; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 overflow-hidden" id="body-root">
 
-// --- MOCK DATA ---
-const INITIAL_ITEMS = [
-  { id: 1, sku: 'WGT-100', name: 'Industrial Widget', barcode: '12345678', uom: 'EA', reorder: 50, onHand: 120, loc: 'A1-R1-B1' },
-  { id: 2, sku: 'BLT-099', name: 'M10 Hex Bolt', barcode: '87654321', uom: 'Box', reorder: 20, onHand: 15, loc: 'B2-R4-B2' },
-  { id: 3, sku: 'SPR-202', name: 'Compression Spring', barcode: '11223344', uom: 'EA', reorder: 100, onHand: 450, loc: 'A1-R2-B5' }
-];
+    <div class="flex h-screen w-full">
+        <aside class="w-72 bg-white border-r border-slate-200 flex flex-col transition-all duration-300" id="sidebar">
+            <div class="p-8 flex items-center gap-3">
+                <div class="bg-[#1f6feb] p-2 rounded-xl text-white shadow-lg">
+                    <i data-lucide="database"></i>
+                </div>
+                <span class="font-extrabold text-xl tracking-tighter">WMS CORE</span>
+            </div>
 
-export default function WMSApp() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [darkMode, setDarkMode] = useState(false);
-  const [items, setItems] = useState(INITIAL_ITEMS);
-  const [searchQuery, setSearchQuery] = useState("");
+            <nav class="flex-1 px-4 space-y-1">
+                <button onclick="showTab('dashboard')" class="nav-link active flex items-center gap-4 w-full p-3.5 rounded-xl transition-all text-[#1f6feb] bg-blue-50 font-bold" id="btn-dashboard">
+                    <i data-lucide="layout-dashboard" size="20"></i> Dashboard
+                </button>
+                <div class="py-4 px-4 text-[10px] font-bold opacity-40 uppercase tracking-widest">Inventory</div>
+                <button onclick="showTab('items')" class="nav-link flex items-center gap-4 w-full p-3.5 rounded-xl transition-all opacity-60 hover:opacity-100 font-bold" id="btn-items">
+                    <i data-lucide="package" size="20"></i> Stock Master
+                </button>
+                <button onclick="showTab('receiving')" class="nav-link flex items-center gap-4 w-full p-3.5 rounded-xl transition-all opacity-60 hover:opacity-100 font-bold" id="btn-receiving">
+                    <i data-lucide="truck" size="20"></i> Receiving (GRN)
+                </button>
+            </nav>
 
-  // Theme Variables
-  const themeClass = darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900';
-  const cardClass = darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
-  const sidebarClass = darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
+            <div class="p-6 border-t">
+                <button onclick="toggleDarkMode()" class="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-slate-100 transition-colors">
+                    <i data-lucide="moon" class="text-blue-600" id="theme-icon"></i>
+                    <span class="font-bold text-sm">Toggle Theme</span>
+                </button>
+            </div>
+        </aside>
 
-  return (
-    <div className={`flex h-screen w-full transition-colors duration-300 ${themeClass}`}>
-      
-      {/* SIDEBAR */}
-      <aside className={`w-72 border-r flex flex-col ${sidebarClass}`}>
-        <div className="p-6 flex items-center gap-3">
-          <div className="bg-[#1f6feb] p-2 rounded-xl text-white shadow-lg shadow-blue-500/30">
-            <Package size={28} />
-          </div>
-          <h1 className="font-black text-xl tracking-tight">CORE-WMS</h1>
-        </div>
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8" id="header">
+                <div class="flex items-center bg-slate-100 px-4 py-2 rounded-xl w-1/3 border border-transparent focus-within:border-blue-500 transition-all" id="search-bar">
+                    <i data-lucide="search" size="18" class="text-slate-400"></i>
+                    <input type="text" placeholder="Scan Barcode or Search..." class="bg-transparent border-none outline-none text-sm ml-3 w-full">
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <p class="text-[10px] font-black text-blue-600 uppercase">Supervisor</p>
+                        <p class="text-sm font-black opacity-80" id="user-name">Alex Chen</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg">AC</div>
+                </div>
+            </header>
 
-        <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
-          <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2 px-4">Inventory</div>
-          <NavItem icon={<Package size={20}/>} label="Item Master" active={activeTab === 'items'} onClick={() => setActiveTab('items')} />
-          <NavItem icon={<MapPin size={20}/>} label="Bin Locations" active={activeTab === 'locations'} onClick={() => setActiveTab('locations')} />
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2 px-4">Operations</div>
-          <NavItem icon={<Truck size={20}/>} label="Receiving" active={activeTab === 'receiving'} onClick={() => setActiveTab('receiving')} />
-          <NavItem icon={<ClipboardCheck size={20}/>} label="Picking" active={activeTab === 'picking'} onClick={() => setActiveTab('picking')} />
-          <NavItem icon={<ArrowRightLeft size={20}/>} label="Transfers" active={activeTab === 'transfers'} onClick={() => setActiveTab('transfers')} />
-        </nav>
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                
+                <div id="dashboard" class="tab-content active space-y-8 animate-in fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm transition-all hover:shadow-md card-el">
+                            <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Total SKUs</p>
+                            <p class="text-4xl font-black mt-2">1,248</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm border-l-red-500 border-l-4 card-el">
+                            <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Low Stock</p>
+                            <p class="text-4xl font-black mt-2 text-red-500">24</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm border-l-green-500 border-l-4 card-el">
+                            <p class="text-[10px] font-bold opacity-50 uppercase tracking-widest">Inbound Today</p>
+                            <p class="text-4xl font-black mt-2 text-green-500">8</p>
+                        </div>
+                    </div>
 
-        <div className="p-6 border-t border-inherit">
-          <button onClick={() => setDarkMode(!darkMode)} className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all">
-            {darkMode ? <Sun size={20} className="text-yellow-400"/> : <Moon size={20} className="text-blue-600"/>}
-            <span className="font-semibold text-sm">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
-        </div>
-      </aside>
+                    <div class="bg-[#1f6feb] p-10 rounded-[2.5rem] text-white flex justify-between items-center shadow-2xl relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <h2 class="text-3xl font-black">Daily Cycle Count</h2>
+                            <p class="opacity-80 mt-2 max-w-md">Section A1 through B4 is scheduled for verification. Start your task now.</p>
+                            <button class="mt-8 bg-white text-blue-600 px-8 py-3 rounded-2xl font-black hover:scale-105 transition-transform shadow-xl">Start Count</button>
+                        </div>
+                        <i data-lucide="clipboard-check" class="absolute -right-10 -bottom-10 opacity-10 w-64 h-64 rotate-12"></i>
+                    </div>
+                </div>
 
-      {/* MAIN VIEWPORT */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        
-        {/* HEADER */}
-        <header className={`h-20 border-b flex items-center justify-between px-8 shadow-sm ${cardClass}`}>
-          <div className={`flex items-center px-4 py-2 rounded-xl w-96 border transition-all ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
-            <Search size={18} className="text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Scan Barcode or SKU..." 
-              className="bg-transparent border-none focus:ring-0 text-sm ml-3 w-full outline-none"
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-6">
-             <div className="text-right">
-                <p className="text-xs font-bold text-[#1f6feb] uppercase tracking-tighter">Senior Lead</p>
-                <p className="text-sm font-bold opacity-90">Warehouse User 01</p>
-             </div>
-             <div className="h-10 w-10 rounded-full bg-[#1f6feb] flex items-center justify-center text-white font-bold">W</div>
-          </div>
-        </header>
+                <div id="items" class="tab-content animate-in slide-in-bottom">
+                    <div class="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden card-el">
+                        <div class="p-8 border-b border-slate-100 flex justify-between items-center">
+                            <h3 class="text-xl font-black">Stock Ledger</h3>
+                            <button class="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 text-sm shadow-lg shadow-blue-500/20">
+                                <i data-lucide="plus" size="18"></i> Add New SKU
+                            </button>
+                        </div>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-[10px] font-black uppercase opacity-40 bg-slate-50">
+                                    <th class="p-6">Product & SKU</th>
+                                    <th class="p-6">Location</th>
+                                    <th class="p-6">On Hand</th>
+                                    <th class="p-6">Status</th>
+                                    <th class="p-6">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100" id="item-table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
 
-        {/* CONTENT AREA */}
-        <section className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-          {activeTab === 'dashboard' && <Dashboard items={items} />}
-          {activeTab === 'items' && <ItemMaster items={items} cardClass={cardClass} darkMode={darkMode}/>}
-          {activeTab === 'receiving' && <ReceivingModule cardClass={cardClass} />}
+                <div id="receiving" class="tab-content">
+                    <div class="max-w-2xl mx-auto py-10">
+                        <div class="bg-white p-12 rounded-[3rem] border border-slate-200 shadow-2xl text-center relative card-el overflow-hidden" id="grn-container">
+                            <div class="bg-blue-600 w-full h-2 absolute top-0 left-0"></div>
+                            <div id="grn-step-1" class="space-y-6">
+                                <i data-lucide="scan" size="64" class="mx-auto text-blue-600"></i>
+                                <h2 class="text-3xl font-black">Inbound GRN</h2>
+                                <p class="opacity-60 text-sm">Scan the PO barcode on the packing slip to initiate the receiving process.</p>
+                                <input type="text" id="po-input" placeholder="PO-XXXXXX" class="w-full p-5 rounded-2xl border bg-slate-50 text-center font-black text-xl outline-none focus:ring-4 ring-blue-500/10">
+                                <button onclick="nextGrnStep(2)" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black shadow-xl shadow-blue-500/40 hover:scale-[1.02] transition-transform">Verify PO</button>
+                            </div>
+                            <div id="grn-step-2" class="hidden space-y-6 text-left">
+                                <h3 class="font-black text-xl">Verification: <span class="text-blue-600">PO-99281</span></h3>
+                                <div class="p-6 border rounded-2xl bg-slate-50 space-y-4">
+                                    <div class="flex justify-between items-center font-bold">
+                                        <span>Industrial Widget</span>
+                                        <input type="number" value="100" class="w-20 p-2 border rounded-lg text-center font-black">
+                                    </div>
+                                </div>
+                                <button onclick="nextGrnStep(3)" class="w-full bg-green-600 text-white py-5 rounded-2xl font-black shadow-lg">Confirm Receipt</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </section>
-      </main>
     </div>
-  );
-}
 
-// --- SUB-COMPONENTS ---
+    <script>
+        // --- 1. DATA MODEL ---
+        const stockData = [
+            { id: 1, sku: 'WGT-100', name: 'Industrial Widget', loc: 'A1-R1-B1', qty: 125, status: 'Healthy' },
+            { id: 2, sku: 'BLT-099', name: 'M10 Hex Bolt', loc: 'B2-R4-B2', qty: 12, status: 'Low' },
+            { id: 3, sku: 'SPR-202', name: 'Compression Spring', loc: 'A1-R2-B5', qty: 450, status: 'Healthy' }
+        ];
 
-function NavItem({ icon, label, active, onClick }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex items-center gap-4 w-full p-3 rounded-xl transition-all ${
-        active 
-        ? 'bg-[#1f6feb] text-white shadow-lg shadow-blue-500/40 font-bold' 
-        : 'hover:bg-slate-100 dark:hover:bg-slate-700 opacity-70 hover:opacity-100 font-medium'
-      }`}
-    >
-      {icon} <span className="text-sm">{label}</span>
-    </button>
-  );
-}
+        // --- 2. INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderTable();
+        });
 
-function Dashboard({ items }) {
-  return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-end">
-        <div>
-          <h2 className="text-3xl font-black">Warehouse Overview</h2>
-          <p className="opacity-60 text-sm mt-1">Real-time inventory levels across all aisles.</p>
-        </div>
-        <button className="bg-[#1f6feb] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform">
-          Generate Inventory Report
-        </button>
-      </div>
+        // --- 3. NAVIGATION LOGIC ---
+        function showTab(tabId) {
+            // Update Tab Content
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard label="Live SKU Count" value={items.length} trend="+2%" color="blue" />
-        <StatCard label="Low Stock Alerts" value={items.filter(i => i.onHand < i.reorder).length} trend="Check Needs" color="red" />
-        <StatCard label="Open Picks" value="12" trend="-4 today" color="orange" />
-        <StatCard label="Capacity" value="78%" trend="Optimal" color="green" />
-      </div>
+            // Update Navigation Buttons Style
+            document.querySelectorAll('.nav-link').forEach(btn => {
+                btn.classList.remove('text-[#1f6feb]', 'bg-blue-50', 'active');
+                btn.classList.add('opacity-60');
+            });
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('text-[#1f6feb]', 'bg-blue-50', 'active');
+            activeBtn.classList.remove('opacity-60');
+        }
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-gradient-to-br from-[#1f6feb] to-blue-800 p-8 rounded-3xl text-white shadow-2xl relative overflow-hidden group">
-          <div className="relative z-10">
-            <h3 className="text-2xl font-bold mb-2">Fast-Move Items</h3>
-            <p className="opacity-80 mb-6 text-sm">Aisle A1 is currently at high-density traffic.</p>
-            <button className="bg-white/20 backdrop-blur-md border border-white/30 px-6 py-2 rounded-xl font-bold hover:bg-white/30 transition-all">Optimize Picking Path</button>
-          </div>
-          <Package size={150} className="absolute -right-10 -bottom-10 opacity-10 group-hover:rotate-12 transition-transform duration-700" />
-        </div>
-        <div className="bg-slate-200 dark:bg-slate-800 p-8 rounded-3xl flex items-center justify-center border-2 border-dashed border-slate-400 dark:border-slate-600">
-           <p className="text-slate-500 font-medium">Warehouse Heatmap Widget</p>
-        </div>
-      </div>
-    </div>
-  );
-}
+        // --- 4. DATA RENDERING ---
+        function renderTable() {
+            const tableBody = document.getElementById('item-table-body');
+            tableBody.innerHTML = stockData.map(item => `
+                <tr class="hover:bg-blue-50/50 transition-colors group">
+                    <td class="p-6">
+                        <p class="font-black text-blue-600">${item.sku}</p>
+                        <p class="text-xs opacity-60 font-medium">${item.name}</p>
+                    </td>
+                    <td class="p-6 font-bold font-mono text-sm">${item.loc}</td>
+                    <td class="p-6 font-black text-lg">${item.qty}</td>
+                    <td class="p-6">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black border ${
+                            item.status === 'Low' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'
+                        }">${item.status.toUpperCase()}</span>
+                    </td>
+                    <td class="p-6">
+                        <button class="p-2 hover:bg-slate-100 rounded-lg transition-all"><i data-lucide="chevron-right"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
 
-function StatCard({ label, value, trend, color }) {
-  const colors = {
-    blue: 'border-blue-500 text-blue-600 bg-blue-500/5',
-    red: 'border-red-500 text-red-600 bg-red-500/5',
-    orange: 'border-orange-500 text-orange-600 bg-orange-500/5',
-    green: 'border-green-500 text-green-600 bg-green-500/5',
-  };
-  return (
-    <div className={`p-6 rounded-2xl border-l-4 bg-white dark:bg-slate-800 shadow-sm ${colors[color]}`}>
-      <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</span>
-      <div className="flex items-baseline gap-3 mt-2">
-        <span className="text-4xl font-black">{value}</span>
-        <span className="text-xs font-bold opacity-80">{trend}</span>
-      </div>
-    </div>
-  );
-}
+        // --- 5. WORKFLOW LOGIC (GRN) ---
+        function nextGrnStep(step) {
+            document.getElementById('grn-step-1').classList.add('hidden');
+            document.getElementById('grn-step-2').classList.add('hidden');
+            
+            if(step === 3) {
+                document.getElementById('grn-container').innerHTML = `
+                    <div class="space-y-6 text-center py-10">
+                        <div class="bg-green-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto text-green-600">
+                            <i data-lucide="check-circle" size="48"></i>
+                        </div>
+                        <h2 class="text-3xl font-black">Receipt Posted</h2>
+                        <p class="opacity-60">Inventory updated. Bin labels have been sent to Printer 02.</p>
+                        <button onclick="location.reload()" class="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black">Complete</button>
+                    </div>
+                `;
+                lucide.createIcons();
+            } else {
+                document.getElementById('grn-step-' + step).classList.remove('hidden');
+            }
+        }
 
-function ItemMaster({ items, cardClass, darkMode }) {
-  return (
-    <div className={`rounded-3xl border shadow-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-500 ${cardClass}`}>
-      <div className="p-8 border-b border-inherit flex justify-between items-center">
-        <h3 className="font-bold text-xl">Inventory Master List</h3>
-        <div className="flex gap-3">
-          <button className="flex items-center gap-2 text-sm border px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"><Printer size={16}/> Bulk Labels</button>
-          <button className="bg-[#1f6feb] text-white px-5 py-2 rounded-xl text-sm font-bold shadow-blue-500/20 shadow-lg">New Item +</button>
-        </div>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className={`text-[11px] font-black uppercase tracking-widest opacity-50 ${darkMode ? 'bg-slate-900/50' : 'bg-slate-50'}`}>
-            <tr>
-              <th className="px-8 py-4">SKU Info</th>
-              <th className="px-8 py-4">Location</th>
-              <th className="px-8 py-4">On Hand</th>
-              <th className="px-8 py-4">Status</th>
-              <th className="px-8 py-4 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-inherit">
-            {items.map(item => (
-              <tr key={item.id} className="hover:bg-blue-500/5 transition-colors group">
-                <td className="px-8 py-5">
-                  <p className="font-black text-[#1f6feb]">{item.sku}</p>
-                  <p className="text-xs opacity-60 font-medium">{item.name}</p>
-                </td>
-                <td className="px-8 py-5">
-                  <div className="flex items-center gap-2">
-                    <MapPin size={14} className="text-red-500"/>
-                    <span className="text-sm font-bold">{item.loc}</span>
-                  </div>
-                </td>
-                <td className="px-8 py-5 font-black text-lg">{item.onHand} <span className="text-[10px] opacity-40 uppercase">{item.uom}</span></td>
-                <td className="px-8 py-5">
-                   {item.onHand < item.reorder 
-                    ? <span className="bg-red-500/10 text-red-500 text-[10px] font-black px-3 py-1 rounded-full border border-red-500/20">LOW STOCK</span>
-                    : <span className="bg-green-500/10 text-green-500 text-[10px] font-black px-3 py-1 rounded-full border border-green-500/20">OPTIMAL</span>
-                   }
-                </td>
-                <td className="px-8 py-5 text-right">
-                  <button className="opacity-0 group-hover:opacity-100 p-2 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-lg transition-all text-[#1f6feb]">
-                    <ChevronRight size={20}/>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+        // --- 6. DARK MODE THEME ---
+        let isDark = false;
+        function toggleDarkMode() {
+            isDark = !isDark;
+            const root = document.getElementById('body-root');
+            const sidebar = document.getElementById('sidebar');
+            const header = document.getElementById('header');
+            const search = document.getElementById('search-bar');
+            const cards = document.querySelectorAll('.card-el');
 
-function ReceivingModule({ cardClass }) {
-  const [step, setStep] = useState(1);
-  return (
-    <div className="max-w-3xl mx-auto py-10 animate-in zoom-in-95 duration-300">
-      <div className={`p-12 rounded-[2.5rem] border shadow-2xl relative ${cardClass}`}>
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1f6feb] p-4 rounded-2xl text-white shadow-xl">
-           <Scan size={32} />
-        </div>
-        
-        {step === 1 && (
-          <div className="space-y-8 text-center mt-4">
-            <h2 className="text-3xl font-black">Inbound Receiving</h2>
-            <p className="opacity-60 max-w-sm mx-auto">Scan the PO barcode or enter the document number to verify incoming shipment.</p>
-            <div className="space-y-4">
-              <input type="text" placeholder="PO # / Tracking #" className="w-full p-5 rounded-2xl border dark:bg-slate-900 focus:ring-4 ring-blue-500/20 outline-none text-center font-bold text-xl uppercase tracking-widest" />
-              <button onClick={() => setStep(2)} className="w-full bg-[#1f6feb] text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-blue-500/30 hover:scale-[1.02] transition-transform">
-                Verify Purchase Order
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center mb-4">
-               <h3 className="text-xl font-bold">Verify Items (PO-9921)</h3>
-               <button onClick={() => setStep(1)} className="text-xs font-bold text-red-500">Cancel</button>
-            </div>
-            <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
-               <div>
-                  <p className="font-bold">Industrial Widget (WGT-100)</p>
-                  <p className="text-xs opacity-50">Expected: 100 EA</p>
-               </div>
-               <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold opacity-40 uppercase">Received:</span>
-                  <input type="number" defaultValue="100" className="w-20 p-2 rounded-lg border dark:bg-slate-800 text-center font-bold text-blue-600 outline-none focus:ring-2 ring-blue-500" />
-               </div>
-            </div>
-            <button onClick={() => setStep(3)} className="w-full bg-green-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-green-500/30">
-               Confirm All & Putaway
-            </button>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="text-center space-y-6 py-4">
-            <div className="bg-green-100 dark:bg-green-900/30 w-24 h-24 rounded-full flex items-center justify-center mx-auto text-green-600 animate-bounce">
-               <CheckCircle size={48} />
-            </div>
-            <h2 className="text-3xl font-black">Shipment Received</h2>
-            <p className="opacity-60">GRN #REC-5502 created. Inventory is now staged in <strong>ST-01</strong>.</p>
-            <div className="flex gap-4">
-              <button onClick={() => setStep(1)} className="flex-1 border p-4 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700">Receive More</button>
-              <button className="flex-1 bg-[#1f6feb] text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2">
-                <Printer size={18}/> Labels
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+            if(isDark) {
+                root.classList.replace('bg-slate-50', 'bg-slate-900');
+                root.classList.replace('text-slate-900', 'text-slate-100');
+                sidebar.classList.replace('bg-white', 'bg-slate-800');
+                sidebar.classList.replace('border-slate-200', 'border-slate-700');
+                header.classList.replace('bg-white', 'bg-slate-800');
+                header.classList.replace('border-slate-200', 'border-slate-700');
+                search.classList.replace('bg-slate-100', 'bg-slate-900');
+                cards.forEach(c => {
+                    c.classList.replace('bg-white', 'bg-slate-800');
+                    c.classList.replace('border-slate-200', 'border-slate-700');
+                });
+            } else {
+                location.reload(); // Refresh to reset styles easily
+            }
+        }
+    </script>
+</body>
+</html>
