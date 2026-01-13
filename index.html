@@ -1,229 +1,277 @@
-// /src/App.js
 import React, { useState, useEffect } from 'react';
 import { 
   Package, LayoutDashboard, Truck, MapPin, 
-  ArrowRightLeft, ClipboardCheck, Barchart3, Settings, 
-  LogOut, Sun, Moon, Search, Plus, Printer, CheckCircle
+  ArrowRightLeft, ClipboardCheck, BarChart3, 
+  LogOut, Sun, Moon, Search, Plus, Printer, 
+  CheckCircle, ChevronRight, X, Scan
 } from 'lucide-react';
 
-// --- MOCK DATABASE ---
-const INITIAL_DATA = {
-  items: [
-    { id: 1, sku: 'WGT-100', name: 'Industrial Widget', barcode: '12345678', uom: 'EA', reorder: 50, onHand: 120 },
-    { id: 2, sku: 'BLT-099', name: 'M10 Hex Bolt', barcode: '87654321', uom: 'Box', reorder: 20, onHand: 15 }
-  ],
-  locations: [
-    { id: 1, code: 'WH1-A1-R1-B1', type: 'Pickable' },
-    { id: 2, code: 'WH1-STAGING', type: 'Staging' }
-  ],
-  po: [
-    { id: 1, num: 'PO-2024-001', supplier: 'Global Parts Inc', status: 'Approved' }
-  ]
-};
+// --- MOCK DATA ---
+const INITIAL_ITEMS = [
+  { id: 1, sku: 'WGT-100', name: 'Industrial Widget', barcode: '12345678', uom: 'EA', reorder: 50, onHand: 120, loc: 'A1-R1-B1' },
+  { id: 2, sku: 'BLT-099', name: 'M10 Hex Bolt', barcode: '87654321', uom: 'Box', reorder: 20, onHand: 15, loc: 'B2-R4-B2' },
+  { id: 3, sku: 'SPR-202', name: 'Compression Spring', barcode: '11223344', uom: 'EA', reorder: 100, onHand: 450, loc: 'A1-R2-B5' }
+];
 
-const App = () => {
-  const [user, setUser] = useState({ name: 'Admin', role: 'ADMIN' });
+export default function WMSApp() {
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(false);
-  const [activePage, setActivePage] = useState('dashboard');
-  const [inventory, setInventory] = useState(INITIAL_DATA.items);
+  const [items, setItems] = useState(INITIAL_ITEMS);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // --- THEME LOGIC ---
-  const theme = darkMode ? 'bg-slate-900 text-slate-100' : 'bg-gray-50 text-slate-900';
-  const cardTheme = darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200';
+  // Theme Variables
+  const themeClass = darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900';
+  const cardClass = darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
+  const sidebarClass = darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200';
 
   return (
-    <div className={`flex h-screen overflow-hidden ${theme} font-sans`}>
+    <div className={`flex h-screen w-full transition-colors duration-300 ${themeClass}`}>
       
       {/* SIDEBAR */}
-      <aside className={`w-64 border-r ${darkMode ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'} hidden md:flex flex-col`}>
-        <div className="p-6 flex items-center gap-3 border-b border-inherit">
-          <div className="bg-blue-600 p-2 rounded-lg text-white">
-            <Package size={24} />
+      <aside className={`w-72 border-r flex flex-col ${sidebarClass}`}>
+        <div className="p-6 flex items-center gap-3">
+          <div className="bg-[#1f6feb] p-2 rounded-xl text-white shadow-lg shadow-blue-500/30">
+            <Package size={28} />
           </div>
-          <span className="font-bold text-lg tracking-tight">WMS PRO</span>
+          <h1 className="font-black text-xl tracking-tight">CORE-WMS</h1>
         </div>
-        
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={activePage === 'dashboard'} onClick={() => setActivePage('dashboard')} />
-          <NavItem icon={<Package size={20}/>} label="Items Master" active={activePage === 'items'} onClick={() => setActivePage('items')} />
-          <NavItem icon={<Truck size={20}/>} label="Receiving (GRN)" active={activePage === 'receiving'} onClick={() => setActivePage('receiving')} />
-          <NavItem icon={<MapPin size={20}/>} label="Putaway" active={activePage === 'putaway'} onClick={() => setActivePage('putaway')} />
-          <NavItem icon={<ArrowRightLeft size={20}/>} label="Transfers" active={activePage === 'transfers'} onClick={() => setActivePage('transfers')} />
-          <NavItem icon={<ClipboardCheck size={20}/>} label="Picking" active={activePage === 'picking'} onClick={() => setActivePage('picking')} />
-          <NavItem icon={<Barchart3 size={20}/>} label="Reports" active={activePage === 'reports'} onClick={() => setActivePage('reports')} />
+
+        <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+          <NavItem icon={<LayoutDashboard size={20}/>} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2 px-4">Inventory</div>
+          <NavItem icon={<Package size={20}/>} label="Item Master" active={activeTab === 'items'} onClick={() => setActiveTab('items')} />
+          <NavItem icon={<MapPin size={20}/>} label="Bin Locations" active={activeTab === 'locations'} onClick={() => setActiveTab('locations')} />
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2 px-4">Operations</div>
+          <NavItem icon={<Truck size={20}/>} label="Receiving" active={activeTab === 'receiving'} onClick={() => setActiveTab('receiving')} />
+          <NavItem icon={<ClipboardCheck size={20}/>} label="Picking" active={activeTab === 'picking'} onClick={() => setActiveTab('picking')} />
+          <NavItem icon={<ArrowRightLeft size={20}/>} label="Transfers" active={activeTab === 'transfers'} onClick={() => setActiveTab('transfers')} />
         </nav>
 
-        <div className="p-4 border-t border-inherit">
-          <button onClick={() => setDarkMode(!darkMode)} className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-blue-500/10 text-blue-500 transition-colors">
-            {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
-            <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+        <div className="p-6 border-t border-inherit">
+          <button onClick={() => setDarkMode(!darkMode)} className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all">
+            {darkMode ? <Sun size={20} className="text-yellow-400"/> : <Moon size={20} className="text-blue-600"/>}
+            <span className="font-semibold text-sm">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
           </button>
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
+      {/* MAIN VIEWPORT */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        {/* TOP NAVBAR */}
-        <header className={`h-16 border-b flex items-center justify-between px-8 ${cardTheme}`}>
-          <div className="flex items-center bg-gray-100 dark:bg-slate-700 rounded-md px-3 py-1.5 w-96">
-            <Search size={18} className="text-gray-400" />
-            <input type="text" placeholder="Scan SKU or Search..." className="bg-transparent border-none focus:ring-0 text-sm ml-2 w-full" />
+        
+        {/* HEADER */}
+        <header className={`h-20 border-b flex items-center justify-between px-8 shadow-sm ${cardClass}`}>
+          <div className={`flex items-center px-4 py-2 rounded-xl w-96 border transition-all ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
+            <Search size={18} className="text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Scan Barcode or SKU..." 
+              className="bg-transparent border-none focus:ring-0 text-sm ml-3 w-full outline-none"
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-xs font-bold text-blue-600">{user.role}</p>
-              <p className="text-sm font-medium">{user.name}</p>
-            </div>
-            <button className="p-2 rounded-full bg-gray-100 dark:bg-slate-700"><LogOut size={18}/></button>
+          <div className="flex items-center gap-6">
+             <div className="text-right">
+                <p className="text-xs font-bold text-[#1f6feb] uppercase tracking-tighter">Senior Lead</p>
+                <p className="text-sm font-bold opacity-90">Warehouse User 01</p>
+             </div>
+             <div className="h-10 w-10 rounded-full bg-[#1f6feb] flex items-center justify-center text-white font-bold">W</div>
           </div>
         </header>
 
-        {/* VIEWPORT */}
-        <section className="flex-1 overflow-y-auto p-8">
-          {activePage === 'dashboard' && <Dashboard inventory={inventory} />}
-          {activePage === 'items' && <ItemsMaster inventory={inventory} cardTheme={cardTheme} />}
-          {activePage === 'receiving' && <ReceivingModule cardTheme={cardTheme} />}
+        {/* CONTENT AREA */}
+        <section className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          {activeTab === 'dashboard' && <Dashboard items={items} />}
+          {activeTab === 'items' && <ItemMaster items={items} cardClass={cardClass} darkMode={darkMode}/>}
+          {activeTab === 'receiving' && <ReceivingModule cardClass={cardClass} />}
         </section>
       </main>
     </div>
   );
-};
+}
 
 // --- SUB-COMPONENTS ---
 
-const NavItem = ({ icon, label, active, onClick }) => (
-  <button 
-    onClick={onClick}
-    className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'hover:bg-blue-50 dark:hover:bg-slate-700 opacity-70 hover:opacity-100'}`}
-  >
-    {icon}
-    <span className="font-medium text-sm">{label}</span>
-  </button>
-);
-
-const Dashboard = ({ inventory }) => (
-  <div className="space-y-8">
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-      <StatCard label="Total SKU" value={inventory.length} color="blue" />
-      <StatCard label="Low Stock" value={inventory.filter(i => i.onHand <= i.reorder).length} color="red" />
-      <StatCard label="Pending PO" value="4" color="orange" />
-      <StatCard label="Picks Today" value="28" color="green" />
-    </div>
-    
-    <div className="bg-blue-600 rounded-2xl p-8 text-white flex justify-between items-center shadow-2xl">
-      <div>
-        <h2 className="text-2xl font-bold">Quick Actions</h2>
-        <p className="opacity-80">Operational shortcuts for warehouse floor staff.</p>
-      </div>
-      <div className="flex gap-4">
-        <button className="bg-white text-blue-600 px-6 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-100"><Plus size={18}/> New GRN</button>
-        <button className="bg-blue-500 text-white border border-blue-400 px-6 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-400"><Printer size={18}/> Print Labels</button>
-      </div>
-    </div>
-  </div>
-);
-
-const StatCard = ({ label, value, color }) => {
-  const colors = {
-    blue: 'border-blue-500 text-blue-600 bg-blue-50/50',
-    red: 'border-red-500 text-red-600 bg-red-50/50',
-    orange: 'border-orange-500 text-orange-600 bg-orange-50/50',
-    green: 'border-green-500 text-green-600 bg-green-50/50'
-  };
+function NavItem({ icon, label, active, onClick }) {
   return (
-    <div className={`p-6 rounded-2xl border-l-4 bg-white shadow-sm dark:bg-slate-800 ${colors[color]}`}>
-      <p className="text-xs font-bold uppercase tracking-wider opacity-70">{label}</p>
-      <p className="text-3xl font-black mt-1">{value}</p>
+    <button 
+      onClick={onClick}
+      className={`flex items-center gap-4 w-full p-3 rounded-xl transition-all ${
+        active 
+        ? 'bg-[#1f6feb] text-white shadow-lg shadow-blue-500/40 font-bold' 
+        : 'hover:bg-slate-100 dark:hover:bg-slate-700 opacity-70 hover:opacity-100 font-medium'
+      }`}
+    >
+      {icon} <span className="text-sm">{label}</span>
+    </button>
+  );
+}
+
+function Dashboard({ items }) {
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex justify-between items-end">
+        <div>
+          <h2 className="text-3xl font-black">Warehouse Overview</h2>
+          <p className="opacity-60 text-sm mt-1">Real-time inventory levels across all aisles.</p>
+        </div>
+        <button className="bg-[#1f6feb] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform">
+          Generate Inventory Report
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatCard label="Live SKU Count" value={items.length} trend="+2%" color="blue" />
+        <StatCard label="Low Stock Alerts" value={items.filter(i => i.onHand < i.reorder).length} trend="Check Needs" color="red" />
+        <StatCard label="Open Picks" value="12" trend="-4 today" color="orange" />
+        <StatCard label="Capacity" value="78%" trend="Optimal" color="green" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-gradient-to-br from-[#1f6feb] to-blue-800 p-8 rounded-3xl text-white shadow-2xl relative overflow-hidden group">
+          <div className="relative z-10">
+            <h3 className="text-2xl font-bold mb-2">Fast-Move Items</h3>
+            <p className="opacity-80 mb-6 text-sm">Aisle A1 is currently at high-density traffic.</p>
+            <button className="bg-white/20 backdrop-blur-md border border-white/30 px-6 py-2 rounded-xl font-bold hover:bg-white/30 transition-all">Optimize Picking Path</button>
+          </div>
+          <Package size={150} className="absolute -right-10 -bottom-10 opacity-10 group-hover:rotate-12 transition-transform duration-700" />
+        </div>
+        <div className="bg-slate-200 dark:bg-slate-800 p-8 rounded-3xl flex items-center justify-center border-2 border-dashed border-slate-400 dark:border-slate-600">
+           <p className="text-slate-500 font-medium">Warehouse Heatmap Widget</p>
+        </div>
+      </div>
     </div>
   );
-};
+}
 
-const ItemsMaster = ({ inventory, cardTheme }) => (
-  <div className={`rounded-2xl border overflow-hidden shadow-sm ${cardTheme}`}>
-    <div className="p-6 border-b border-inherit flex justify-between items-center">
-      <h3 className="font-bold text-lg">Inventory Master List</h3>
-      <div className="flex gap-2">
-        <button className="p-2 border rounded-md hover:bg-gray-50 dark:hover:bg-slate-700"><Search size={16}/></button>
-        <button className="bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm font-bold">Add Item</button>
+function StatCard({ label, value, trend, color }) {
+  const colors = {
+    blue: 'border-blue-500 text-blue-600 bg-blue-500/5',
+    red: 'border-red-500 text-red-600 bg-red-500/5',
+    orange: 'border-orange-500 text-orange-600 bg-orange-500/5',
+    green: 'border-green-500 text-green-600 bg-green-500/5',
+  };
+  return (
+    <div className={`p-6 rounded-2xl border-l-4 bg-white dark:bg-slate-800 shadow-sm ${colors[color]}`}>
+      <span className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</span>
+      <div className="flex items-baseline gap-3 mt-2">
+        <span className="text-4xl font-black">{value}</span>
+        <span className="text-xs font-bold opacity-80">{trend}</span>
       </div>
     </div>
-    <table className="w-full text-left text-sm">
-      <thead className="bg-gray-50 dark:bg-slate-700/50 font-bold opacity-70">
-        <tr>
-          <th className="p-4">SKU</th>
-          <th className="p-4">Item Name</th>
-          <th className="p-4">Barcode</th>
-          <th className="p-4 text-center">On Hand</th>
-          <th className="p-4">UOM</th>
-          <th className="p-4 text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-inherit">
-        {inventory.map(item => (
-          <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
-            <td className="p-4 font-mono font-bold text-blue-600">{item.sku}</td>
-            <td className="p-4">{item.name}</td>
-            <td className="p-4">{item.barcode}</td>
-            <td className={`p-4 text-center font-bold ${item.onHand <= item.reorder ? 'text-red-500' : ''}`}>{item.onHand}</td>
-            <td className="p-4 text-xs font-bold"><span className="bg-gray-100 dark:bg-slate-600 px-2 py-1 rounded">{item.uom}</span></td>
-            <td className="p-4 text-right flex justify-end gap-2">
-              <button className="text-blue-500 p-1 hover:bg-blue-50 rounded"><Printer size={16}/></button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+  );
+}
 
-const ReceivingModule = ({ cardTheme }) => {
+function ItemMaster({ items, cardClass, darkMode }) {
+  return (
+    <div className={`rounded-3xl border shadow-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-500 ${cardClass}`}>
+      <div className="p-8 border-b border-inherit flex justify-between items-center">
+        <h3 className="font-bold text-xl">Inventory Master List</h3>
+        <div className="flex gap-3">
+          <button className="flex items-center gap-2 text-sm border px-4 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"><Printer size={16}/> Bulk Labels</button>
+          <button className="bg-[#1f6feb] text-white px-5 py-2 rounded-xl text-sm font-bold shadow-blue-500/20 shadow-lg">New Item +</button>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead className={`text-[11px] font-black uppercase tracking-widest opacity-50 ${darkMode ? 'bg-slate-900/50' : 'bg-slate-50'}`}>
+            <tr>
+              <th className="px-8 py-4">SKU Info</th>
+              <th className="px-8 py-4">Location</th>
+              <th className="px-8 py-4">On Hand</th>
+              <th className="px-8 py-4">Status</th>
+              <th className="px-8 py-4 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-inherit">
+            {items.map(item => (
+              <tr key={item.id} className="hover:bg-blue-500/5 transition-colors group">
+                <td className="px-8 py-5">
+                  <p className="font-black text-[#1f6feb]">{item.sku}</p>
+                  <p className="text-xs opacity-60 font-medium">{item.name}</p>
+                </td>
+                <td className="px-8 py-5">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={14} className="text-red-500"/>
+                    <span className="text-sm font-bold">{item.loc}</span>
+                  </div>
+                </td>
+                <td className="px-8 py-5 font-black text-lg">{item.onHand} <span className="text-[10px] opacity-40 uppercase">{item.uom}</span></td>
+                <td className="px-8 py-5">
+                   {item.onHand < item.reorder 
+                    ? <span className="bg-red-500/10 text-red-500 text-[10px] font-black px-3 py-1 rounded-full border border-red-500/20">LOW STOCK</span>
+                    : <span className="bg-green-500/10 text-green-500 text-[10px] font-black px-3 py-1 rounded-full border border-green-500/20">OPTIMAL</span>
+                   }
+                </td>
+                <td className="px-8 py-5 text-right">
+                  <button className="opacity-0 group-hover:opacity-100 p-2 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-lg transition-all text-[#1f6feb]">
+                    <ChevronRight size={20}/>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function ReceivingModule({ cardClass }) {
   const [step, setStep] = useState(1);
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex gap-4 mb-8">
-        {[1, 2, 3].map(s => (
-          <div key={s} className={`flex-1 h-2 rounded-full ${step >= s ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'}`} />
-        ))}
-      </div>
-      
-      <div className={`p-8 rounded-3xl border shadow-xl ${cardTheme}`}>
+    <div className="max-w-3xl mx-auto py-10 animate-in zoom-in-95 duration-300">
+      <div className={`p-12 rounded-[2.5rem] border shadow-2xl relative ${cardClass}`}>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1f6feb] p-4 rounded-2xl text-white shadow-xl">
+           <Scan size={32} />
+        </div>
+        
         {step === 1 && (
-          <div className="space-y-6 text-center">
-            <div className="bg-blue-100 dark:bg-blue-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-blue-600">
-               <Truck size={32} />
+          <div className="space-y-8 text-center mt-4">
+            <h2 className="text-3xl font-black">Inbound Receiving</h2>
+            <p className="opacity-60 max-w-sm mx-auto">Scan the PO barcode or enter the document number to verify incoming shipment.</p>
+            <div className="space-y-4">
+              <input type="text" placeholder="PO # / Tracking #" className="w-full p-5 rounded-2xl border dark:bg-slate-900 focus:ring-4 ring-blue-500/20 outline-none text-center font-bold text-xl uppercase tracking-widest" />
+              <button onClick={() => setStep(2)} className="w-full bg-[#1f6feb] text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-blue-500/30 hover:scale-[1.02] transition-transform">
+                Verify Purchase Order
+              </button>
             </div>
-            <h2 className="text-2xl font-bold">Inbound Receiving (GRN)</h2>
-            <p className="opacity-70">Scan the Purchase Order barcode or enter manually to begin.</p>
-            <input type="text" placeholder="PO Number (e.g. PO-2024-001)" className="w-full max-w-sm p-3 rounded-xl border dark:bg-slate-900 focus:ring-2 ring-blue-500 text-center font-bold text-lg" />
-            <button onClick={() => setStep(2)} className="w-full max-w-sm bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20">Fetch PO Details</button>
           </div>
         )}
+
         {step === 2 && (
-           <div className="space-y-6">
-              <div className="flex justify-between">
-                <h3 className="font-bold text-xl">Confirm Items</h3>
-                <span className="text-blue-600 font-bold">PO-2024-001</span>
-              </div>
-              <div className="space-y-3">
-                <div className="p-4 border rounded-xl flex justify-between items-center">
-                  <div>
-                    <p className="font-bold">Industrial Widget</p>
-                    <p className="text-xs opacity-60">Expected: 50 EA</p>
-                  </div>
-                  <input type="number" defaultValue="50" className="w-20 p-2 border rounded-md dark:bg-slate-900 text-center font-bold" />
-                </div>
-              </div>
-              <button onClick={() => setStep(3)} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Post Receipt</button>
-           </div>
+          <div className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+               <h3 className="text-xl font-bold">Verify Items (PO-9921)</h3>
+               <button onClick={() => setStep(1)} className="text-xs font-bold text-red-500">Cancel</button>
+            </div>
+            <div className="p-5 border rounded-2xl bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+               <div>
+                  <p className="font-bold">Industrial Widget (WGT-100)</p>
+                  <p className="text-xs opacity-50">Expected: 100 EA</p>
+               </div>
+               <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold opacity-40 uppercase">Received:</span>
+                  <input type="number" defaultValue="100" className="w-20 p-2 rounded-lg border dark:bg-slate-800 text-center font-bold text-blue-600 outline-none focus:ring-2 ring-blue-500" />
+               </div>
+            </div>
+            <button onClick={() => setStep(3)} className="w-full bg-green-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-green-500/30">
+               Confirm All & Putaway
+            </button>
+          </div>
         )}
+
         {step === 3 && (
-          <div className="text-center space-y-4 py-8">
-            <div className="text-green-500 flex justify-center"><CheckCircle size={64} /></div>
-            <h2 className="text-2xl font-bold">Receipt Successful!</h2>
-            <p className="opacity-70 text-sm">GRN #99281 has been generated and inventory balances updated.</p>
-            <div className="pt-4 flex gap-3 justify-center">
-               <button onClick={() => setStep(1)} className="border px-6 py-2 rounded-lg font-bold">Done</button>
-               <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2"><Printer size={16}/> Print GRN</button>
+          <div className="text-center space-y-6 py-4">
+            <div className="bg-green-100 dark:bg-green-900/30 w-24 h-24 rounded-full flex items-center justify-center mx-auto text-green-600 animate-bounce">
+               <CheckCircle size={48} />
+            </div>
+            <h2 className="text-3xl font-black">Shipment Received</h2>
+            <p className="opacity-60">GRN #REC-5502 created. Inventory is now staged in <strong>ST-01</strong>.</p>
+            <div className="flex gap-4">
+              <button onClick={() => setStep(1)} className="flex-1 border p-4 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700">Receive More</button>
+              <button className="flex-1 bg-[#1f6feb] text-white p-4 rounded-xl font-bold flex items-center justify-center gap-2">
+                <Printer size={18}/> Labels
+              </button>
             </div>
           </div>
         )}
@@ -231,5 +279,3 @@ const ReceivingModule = ({ cardTheme }) => {
     </div>
   );
 }
-
-export default App;
